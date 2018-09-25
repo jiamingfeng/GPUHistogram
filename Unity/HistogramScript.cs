@@ -9,13 +9,13 @@ public class HistogramScript : MonoBehaviour
 
     public ComputeShader shader;
 	//private Camera camera;
-    public RenderTexture inputTexture;
+    private RenderTexture InputTexture;
 
-	public RenderTexture HistogramTexture;
+	private RenderTexture HistogramTexture;
 
-    public uint[] histogramData;
+    private uint[] histogramData;
 
-	private Camera myCam;
+	//private Camera MainCamera;
 
 	private RawImage HistogramUIImage;
 
@@ -64,8 +64,6 @@ public class HistogramScript : MonoBehaviour
 		shader.SetBuffer(handleTextureCompute, "HistogramBuffer", histogramBuffer);
 		shader.SetTexture(handleTextureCompute, "HistogramTexture", HistogramTexture);
 
-		myCam = gameObject.GetComponent<Camera>();
-
 		GameObject HistogramUI = GameObject.Find("HistogramImage");
 		if ( HistogramUI == null )
 		{
@@ -87,9 +85,9 @@ public class HistogramScript : MonoBehaviour
             histogramBuffer = null;
         }
 
-		if (null != inputTexture)
+		if (null != InputTexture)
 		{
-			inputTexture.Release();
+			InputTexture.Release();
 		}
 
 		if (null != HistogramTexture)
@@ -100,61 +98,64 @@ public class HistogramScript : MonoBehaviour
 
     }
 
+    // RenderTexture _rt;
+    // void OnPreRender()
+    // {
+    //     GetComponent<Camera>().targetTexture = _rt;
+	// }	
 
-    void Update()
+    void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         if (null == shader ||
            0 > handleInitialize || 0 > handleMain ||
            null == histogramBuffer || null == histogramData)
         {
             Debug.Log("Cannot compute histogram");
-            return;
         }
 
-        if (null == inputTexture || myCam.pixelWidth != inputTexture.width
-             || myCam.pixelHeight != inputTexture.height)
+        else
         {
-            if (null != inputTexture)
+            if (null == InputTexture || source.width != InputTexture.width
+                || source.height != InputTexture.height)
             {
-                inputTexture.Release();
+                if (null != InputTexture)
+                {
+                    InputTexture.Release();
+                }
+
+                InputTexture = new RenderTexture(source.width, source.height, 0);
+                InputTexture.enableRandomWrite = true;
+                bool result = InputTexture.Create();
+                if (result)
+                {
+                    shader.SetTexture(handleMain, "InputTexture", InputTexture);
+                    shader.SetFloat("level", (float)(source.width * source.height) / 16.0f);
+
+                    Debug.LogFormat("Createdn input texture with size: {0}, {1}", InputTexture.width, InputTexture.height);
+
+                    //MainCamera.targetTexture = inputTexture;		
+                }
+                else
+                {
+                    Debug.LogError("Failed to create input texture.");
+                }
             }
 
-            inputTexture = new RenderTexture(myCam.pixelWidth, myCam.pixelHeight, 0);
-			inputTexture.enableRandomWrite = true;
-            bool result = inputTexture.Create();
-			if ( result )
-			{
-				shader.SetTexture(handleMain, "InputTexture", inputTexture);
-				shader.SetFloat("level", (float)(myCam.pixelWidth * myCam.pixelHeight) / 16.0f);
+			//Graphics.CopyTexture(source, InputTexture);
+            Graphics.Blit(source, InputTexture);
 
-				Debug.LogFormat("Createdn input texture with size: {0}, {1}",inputTexture.width, inputTexture.height );
+            shader.Dispatch(handleInitialize, 256 / 64, 1, 1);
+            shader.Dispatch(handleTextureInit, 256 / 32, 128 / 32, 1);
+            // divided by 64 in x because of [numthreads(64,1,1)] in the compute shader code
+            shader.Dispatch(handleMain, (InputTexture.width + 7) / 8, (InputTexture.height + 7) / 8, 1);
+            // divided by 8 in x and y because of [numthreads(8,8,1)] in the compute shader code
 
-				myCam.targetTexture = inputTexture;		
-			}
-			else{
-				Debug.LogError("Failed to create input texture.");				
-			}
-		}
+            shader.Dispatch(handleTextureCompute, 256 / 32, 128 / 32, 1);
+        }
 
-		myCam.Render();
+		//GetComponent<Camera>().targetTexture = null;
+		//Graphics.Blit(source, null as RenderTexture);
+        Graphics.Blit(source, destination); // just copy		
 
-        // }
-
-		// shader.SetTexture(handleMain, "InputTexture", inputTexture);
-
-
-        shader.Dispatch(handleInitialize, 256 / 64, 1, 1);
-		shader.Dispatch(handleTextureInit, 256 / 32, 128 / 32, 1);
-        // divided by 64 in x because of [numthreads(64,1,1)] in the compute shader code
-        shader.Dispatch(handleMain, (inputTexture.width + 7) / 8, (inputTexture.height + 7) / 8, 1);
-        // divided by 8 in x and y because of [numthreads(8,8,1)] in the compute shader code
-
-		shader.Dispatch(handleTextureCompute,  256 / 32, 128 / 32,  1);
-
-        //histogramBuffer.GetData(histogramData);
-
-
-        //Graphics.Blit(source, destination);
-		HistogramUIImage.texture = HistogramTexture;
     }
 }
