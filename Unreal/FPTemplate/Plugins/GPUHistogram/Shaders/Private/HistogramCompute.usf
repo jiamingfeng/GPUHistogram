@@ -1,0 +1,56 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma once
+
+#pragma kernel HistogramInitialize
+#pragma kernel HistogramMain
+#pragma kernel HistogramTextureInit
+#pragma kernel HistogramTextureCompute // 256 * 128
+
+float level; //level of the luminace = width * height
+Texture2D<float4> InputTexture; // input texture
+RWTexture2D<float4> HistogramTexture; // histogram texture
+
+RWBuffer<uint> HistogramBuffer; // lumiance histogram data
+
+
+
+[numthreads(64,1,1)]
+void HistogramInitialize(uint3 id : SV_DispatchThreadID) 
+{
+   //HistogramBuffer[id.x].color = uint4(0, 0, 0, 0);
+   HistogramBuffer[id.x] = 0;
+}
+
+[numthreads(32,32,1)]
+void HistogramTextureInit(uint3 id : SV_DispatchThreadID)
+{
+	HistogramTexture[id.xy] = float4(0.01f, 0.01f, 0.01f, 0.2f);
+}
+
+[numthreads(8,8,1)]
+void HistogramMain (uint3 id : SV_DispatchThreadID) 
+{
+   uint4 col = uint4(255.0 * InputTexture[id.xy]);
+
+   uint luminance = uint(0.2126*(col.r) + 0.7152*(col.g) + 0.0722*(col.b));//uint(0.2126*float(col.r) + 0.7152*float(col.g) + 0.0722*float(col.b));
+
+   InterlockedAdd(HistogramBuffer[luminance], 1);
+
+   //InterlockedAdd(HistogramBuffer[col.r].color.r, 1);
+   //InterlockedAdd(HistogramBuffer[col.g].color.g, 1); 
+   //InterlockedAdd(HistogramBuffer[col.b].color.b, 1); 
+   //InterlockedAdd(HistogramBuffer[col.a].color.a, 1); 
+}
+
+[numthreads(32,32,1)]
+void HistogramTextureCompute(uint3 id : SV_DispatchThreadID)
+{
+	float pixelCount = float(HistogramBuffer[id.x]);
+	float luminanceLevel = min(1.0, pixelCount / level);
+	uint LuminanceCount = uint(luminanceLevel * 128);
+
+	if ( id.y < LuminanceCount )
+	{	
+		HistogramTexture[id.xy] = float4(1.0f, 1.0f, 1.0f, 1.0f);
+	}		
+}
