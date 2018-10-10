@@ -7,10 +7,10 @@
 #pragma kernel HistogramTextureCompute // 256 * 128
 
 float level; //level of the luminace = width * height
-Texture2D<float4> InputTexture; // input texture
+RWTexture2D<float4> InputTexture; // input texture
 RWTexture2D<float4> HistogramTexture; // histogram texture
 
-RWBuffer<uint> HistogramBuffer; // lumiance histogram data
+RWStructuredBuffer<uint> HistogramBuffer; // lumiance histogram data
 
 
 

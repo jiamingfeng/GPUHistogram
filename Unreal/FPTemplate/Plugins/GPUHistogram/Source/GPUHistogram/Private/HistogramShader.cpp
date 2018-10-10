@@ -26,13 +26,14 @@ void FHistogramShader::SetLevel(FRHICommandList& rhi_command_list, const float l
 	SetShaderValue(rhi_command_list, GetComputeShader(), Level, level);
 }
 
-void FHistogramShader::SetInputTexture(FRHICommandList& rhi_command_list, const FTexture* Texture)
+void FHistogramShader::SetInputTexture(FRHICommandList& rhi_command_list, FUnorderedAccessViewRHIParamRef inputTextureRef)
 {
-	checkSlow(InputTexture.IsInitialized());
+	//checkSlow(InputTexture.IsInitialized());
 	if (InputTexture.IsBound())
 	{
-		Texture->LastRenderTime = FApp::GetCurrentTime();
-		rhi_command_list.SetShaderTexture(GetComputeShader(), InputTexture.GetBaseIndex(), Texture->TextureRHI);
+		//Texture->LastRenderTime = FApp::GetCurrentTime();
+		//rhi_command_list.SetShaderTexture(GetComputeShader(), InputTexture.GetBaseIndex(), Texture->TextureRHI);
+		rhi_command_list.SetUAVParameter(GetComputeShader(), InputTexture.GetBaseIndex(), inputTextureRef);
 	}
 }
 

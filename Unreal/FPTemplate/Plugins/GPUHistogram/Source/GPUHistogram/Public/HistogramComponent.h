@@ -4,6 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "DynamicRHIResourceArray.h" // Core module
+#include "RenderCommandFence.h" // RenderCore module
+#include "HistogramShader.h"
+#include "Engine/TextureRenderTarget2D.h"
 #include "HistogramComponent.generated.h"
 
 
@@ -24,6 +28,19 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-		
+	UFUNCTION(BlueprintCallable, Category = "Histogram")
+	void InitHistogram(UTextureRenderTarget2D* InputTexture);
+
+	void InitHistogram_RenderThread();
+
+	TResourceArray<uint32> HistogramBufferRA;
+	FRHIResourceCreateInfo HistogramBufferResource;
+	FStructuredBufferRHIRef HistogramBufferRef;
+	FShaderResourceViewRHIRef HistogramBufferSRV;
+
+	FUnorderedAccessViewRHIRef InputTextureUAV;
+
+	FRenderCommandFence RenderCommandFence; // Necessary for waiting until a render command function finishes.
+	const TShaderMap<FGlobalShaderType>* ShaderMap = GetGlobalShaderMap(GMaxRHIFeatureLevel);
 	
 };

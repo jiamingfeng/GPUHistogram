@@ -34,7 +34,7 @@ public:
 	virtual bool Serialize(FArchive& Ar) override;
 
 	void SetLevel(FRHICommandList& rhi_command_list, const float level);
-	void SetInputTexture(FRHICommandList& rhi_command_list, const FTexture* Texture);
+	void SetInputTexture(FRHICommandList& rhi_command_list, FUnorderedAccessViewRHIParamRef inputTextureRef);
 
 	void SetHistogramBuffer(FRHICommandList& rhi_command_list, FShaderResourceViewRHIRef bufferRef);
 	void SetHistogramTexture(FRHICommandList& rhi_command_list, FUnorderedAccessViewRHIParamRef histogramTextureRef);
