@@ -45,8 +45,8 @@ void UHistogramComponent::InitHistogram(UTextureRenderTarget2D* InputTexture)
 	HistogramBufferRef = RHICreateStructuredBuffer(sizeof(uint32), sizeof(float) * HISTOGRAM_BUFFER_SIZE, BUF_ShaderResource, HistogramBufferResource);
 	HistogramBufferSRV = RHICreateShaderResourceView(HistogramBufferRef);
 
-	FTexture2DRHIRef TextureRef = InputTexture->GetRenderTargetResource()->GetTextureRenderTarget2DResource()->GetTextureRHI();
-	InputTextureUAV = RHICreateUnorderedAccessView(TextureRef);
+	const FTexture2DRHIRef &TextureRef = InputTexture->GetRenderTargetResource()->GetRenderTargetTexture();
+	InputTextureRef = TextureRef;
 
 
 
@@ -71,6 +71,6 @@ void UHistogramComponent::InitHistogram_RenderThread()
 
 	rhi_command_list.SetComputeShader(shader->GetComputeShader());
 	shader->SetHistogramBuffer(rhi_command_list, HistogramBufferSRV);
-	shader->SetInputTexture(rhi_command_list, InputTextureUAV);
+	shader->SetInputTexture(rhi_command_list, InputTextureRef);
 }
 

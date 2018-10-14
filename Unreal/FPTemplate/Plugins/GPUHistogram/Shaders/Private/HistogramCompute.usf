@@ -7,7 +7,7 @@
 #pragma kernel HistogramTextureCompute // 256 * 128
 
 float level; //level of the luminace = width * height
-RWTexture2D<float4> InputTexture; // input texture
+Texture2D InputTexture; // input texture
 RWTexture2D<float4> HistogramTexture; // histogram texture
 
 RWStructuredBuffer<uint> HistogramBuffer; // lumiance histogram data
@@ -30,11 +30,12 @@ void HistogramTextureInit(uint3 id : SV_DispatchThreadID)
 [numthreads(8,8,1)]
 void HistogramMain (uint3 id : SV_DispatchThreadID) 
 {
-   uint4 col = uint4(255.0 * InputTexture[id.xy]);
+    uint4 col = uint4(255.0f * InputTexture.Load(int3(id.xy, 0)));
+    //uint4 col = uint4(255.0f * InputTexture[id.xy]);
 
-   uint luminance = uint(0.2126*(col.r) + 0.7152*(col.g) + 0.0722*(col.b));//uint(0.2126*float(col.r) + 0.7152*float(col.g) + 0.0722*float(col.b));
+    uint luminance = uint(0.2126f * (col.r) + 0.7152f * (col.g) + 0.0722f * (col.b)); //uint(0.2126*float(col.r) + 0.7152*float(col.g) + 0.0722*float(col.b));
 
-   InterlockedAdd(HistogramBuffer[luminance], 1);
+    InterlockedAdd(HistogramBuffer[luminance], 1);
 
    //InterlockedAdd(HistogramBuffer[col.r].color.r, 1);
    //InterlockedAdd(HistogramBuffer[col.g].color.g, 1); 

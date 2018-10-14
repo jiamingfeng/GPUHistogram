@@ -3,6 +3,10 @@
 #include "HistogramShader.h"
 #include "ShaderParameterUtils.h" // Necessary for SetShaderValue, SetUniformBufferParameter.
 
+
+FHistogramShader::FHistogramShader()
+{}
+
 FHistogramShader::FHistogramShader(const ShaderMetaType::CompiledShaderInitializerType& initializer)
 	: FGlobalShader(initializer)
 {
@@ -11,10 +15,6 @@ FHistogramShader::FHistogramShader(const ShaderMetaType::CompiledShaderInitializ
 	InputTexture.Bind(initializer.ParameterMap, TEXT("InputTexture"), SPF_Mandatory);
 	HistogramTexture.Bind(initializer.ParameterMap, TEXT("HistogramTexture"), SPF_Mandatory);
 }
-
-//FHistogramShader::~FHistogramShader()
-//{
-//}
 
 bool FHistogramShader::Serialize(FArchive& Ar) {
 	bool bShaderHasOutdatedParameters = FGlobalShader::Serialize(Ar);
@@ -26,14 +26,12 @@ void FHistogramShader::SetLevel(FRHICommandList& rhi_command_list, const float l
 	SetShaderValue(rhi_command_list, GetComputeShader(), Level, level);
 }
 
-void FHistogramShader::SetInputTexture(FRHICommandList& rhi_command_list, FUnorderedAccessViewRHIParamRef inputTextureRef)
+void FHistogramShader::SetInputTexture(FRHICommandList& rhi_command_list, FTextureRHIParamRef textureRef)
 {
 	//checkSlow(InputTexture.IsInitialized());
 	if (InputTexture.IsBound())
 	{
-		//Texture->LastRenderTime = FApp::GetCurrentTime();
-		//rhi_command_list.SetShaderTexture(GetComputeShader(), InputTexture.GetBaseIndex(), Texture->TextureRHI);
-		rhi_command_list.SetUAVParameter(GetComputeShader(), InputTexture.GetBaseIndex(), inputTextureRef);
+		SetTextureParameter(rhi_command_list, GetComputeShader(), InputTexture, textureRef);
 	}
 }
 
@@ -70,5 +68,22 @@ void FHistogramShader::ClearOutput(FRHICommandList& rhi_command_list)
 	}
 }
 
+FHistogramShaderMain::FHistogramShaderMain()
+{}
+
+FHistogramShaderMain::FHistogramShaderMain(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
+	: FHistogramShader(Initializer)
+{
+}
+
+FHistogramShaderTextureCompute::FHistogramShaderTextureCompute()
+{}
+
+FHistogramShaderTextureCompute::FHistogramShaderTextureCompute(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
+	: FHistogramShader(Initializer)
+{
+}
+
+IMPLEMENT_SHADER_TYPE(, FHistogramShader, TEXT("/Plugin/GPUHistogram/Private/HistogramCompute.usf"), TEXT("HistogramMain"), SF_Compute);
 IMPLEMENT_SHADER_TYPE(, FHistogramShaderMain, TEXT("/Plugin/GPUHistogram/Private/HistogramCompute.usf"), TEXT("HistogramMain"), SF_Compute);
 IMPLEMENT_SHADER_TYPE(, FHistogramShaderTextureCompute, TEXT("/Plugin/GPUHistogram/Private/HistogramCompute.usf"), TEXT("HistogramTextureCompute"), SF_Compute);

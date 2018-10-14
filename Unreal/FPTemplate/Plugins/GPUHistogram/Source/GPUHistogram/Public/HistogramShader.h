@@ -6,16 +6,20 @@
 #include "GlobalShader.h" //ShaderCore module
 #include "UniformBuffer.h" // RenderCore module
 #include "RHICommandList.h" // RHI module
+#include "Engine/TextureRenderTarget2D.h"
+#include "Public/GlobalShader.h"
+
 
 
 class FHistogramShader : public FGlobalShader
 {
 	 
+	DECLARE_SHADER_TYPE(FHistogramShader, Global);
 public:
 	/* Essential functions */
 
-	FHistogramShader() {}
-	explicit FHistogramShader(const ShaderMetaType::CompiledShaderInitializerType& initializer);
+	FHistogramShader();
+	FHistogramShader(const ShaderMetaType::CompiledShaderInitializerType& initializer);
 
 	static bool ShouldCache(EShaderPlatform Platform)
 	{
@@ -34,7 +38,7 @@ public:
 	virtual bool Serialize(FArchive& Ar) override;
 
 	void SetLevel(FRHICommandList& rhi_command_list, const float level);
-	void SetInputTexture(FRHICommandList& rhi_command_list, FUnorderedAccessViewRHIParamRef inputTextureRef);
+	void SetInputTexture(FRHICommandList& rhi_command_list, FTextureRHIParamRef textureRef);
 
 	void SetHistogramBuffer(FRHICommandList& rhi_command_list, FShaderResourceViewRHIRef bufferRef);
 	void SetHistogramTexture(FRHICommandList& rhi_command_list, FUnorderedAccessViewRHIParamRef histogramTextureRef);
@@ -42,7 +46,7 @@ public:
 	void ClearParameters(FRHICommandList& rhi_command_list); // for RWTexture2D.
 	void ClearOutput(FRHICommandList& rhi_command_list); // for RWTexture2D.
 
-private:
+protected:
 
 	FShaderParameter         Level;
 	FShaderResourceParameter HistogramBuffer; //RWBuffer<uint> HistogramBuffer;
@@ -53,32 +57,26 @@ private:
 
 class FHistogramShaderMain : public FHistogramShader
 {
-	DECLARE_SHADER_TYPE(FHistogramShaderMain, Global, );
+	DECLARE_SHADER_TYPE(FHistogramShaderMain, Global);
 
 public:
 
 	/** Default constructor. */
-	FHistogramShaderMain() {}
+	FHistogramShaderMain();
 
 	/** Initialization constructor. */
-	FHistogramShaderMain(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
-		: FHistogramShader(Initializer)
-	{
-	}
+	FHistogramShaderMain(const ShaderMetaType::CompiledShaderInitializerType& Initializer);
 };
 
 class FHistogramShaderTextureCompute : public FHistogramShader
 {
-	DECLARE_SHADER_TYPE(FHistogramShaderTextureCompute, Global, );
+	DECLARE_SHADER_TYPE(FHistogramShaderTextureCompute, Global);
 
 public:
 
 	/** Default constructor. */
-	FHistogramShaderTextureCompute() {}
+	FHistogramShaderTextureCompute();
 
 	/** Initialization constructor. */
-	FHistogramShaderTextureCompute(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
-		: FHistogramShader(Initializer)
-	{
-	}
+	FHistogramShaderTextureCompute(const ShaderMetaType::CompiledShaderInitializerType& Initializer);
 };

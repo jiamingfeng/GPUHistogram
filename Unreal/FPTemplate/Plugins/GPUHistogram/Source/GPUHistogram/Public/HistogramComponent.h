@@ -38,7 +38,7 @@ public:
 	FStructuredBufferRHIRef HistogramBufferRef;
 	FShaderResourceViewRHIRef HistogramBufferSRV;
 
-	FUnorderedAccessViewRHIRef InputTextureUAV;
+	FTextureRHIParamRef InputTextureRef;
 
 	FRenderCommandFence RenderCommandFence; // Necessary for waiting until a render command function finishes.
 	const TShaderMap<FGlobalShaderType>* ShaderMap = GetGlobalShaderMap(GMaxRHIFeatureLevel);
