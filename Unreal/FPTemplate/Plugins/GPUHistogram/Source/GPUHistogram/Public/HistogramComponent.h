@@ -31,12 +31,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Histogram")
 	void InitHistogram(UTextureRenderTarget2D* InputTexture);
 
-	void InitHistogram_RenderThread();
+	void InitHistogram_RenderThread(TArray<uint32>* readback);
 
 	TResourceArray<uint32> HistogramBufferRA;
 	FRHIResourceCreateInfo HistogramBufferResource;
 	FStructuredBufferRHIRef HistogramBufferRef;
-	FShaderResourceViewRHIRef HistogramBufferSRV;
+	FUnorderedAccessViewRHIRef HistogramBufferUAV;
 
 	FTextureRHIParamRef InputTextureRef;
 

@@ -40,7 +40,7 @@ public:
 	void SetLevel(FRHICommandList& rhi_command_list, const float level);
 	void SetInputTexture(FRHICommandList& rhi_command_list, FTextureRHIParamRef textureRef);
 
-	void SetHistogramBuffer(FRHICommandList& rhi_command_list, FShaderResourceViewRHIRef bufferRef);
+	void SetHistogramBuffer(FRHICommandList& rhi_command_list, FUnorderedAccessViewRHIParamRef bufferRef);
 	void SetHistogramTexture(FRHICommandList& rhi_command_list, FUnorderedAccessViewRHIParamRef histogramTextureRef);
 
 	void ClearParameters(FRHICommandList& rhi_command_list); // for RWTexture2D.

@@ -4,6 +4,17 @@
 
 const int32 HISTOGRAM_BUFFER_SIZE = 256 * 128;
 
+static void PrintBuffer(const TArray<uint32> &Buffer)
+{
+	FString content;
+	for (auto value : Buffer)
+	{
+		content.AppendInt(value);
+		content.Append(TEXT(", "));
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Buffer Array: [ %s ]"), *content);
+}
+
 
 // Sets default values for this component's properties
 UHistogramComponent::UHistogramComponent()
@@ -42,24 +53,28 @@ void UHistogramComponent::InitHistogram(UTextureRenderTarget2D* InputTexture)
 	FMemory::Memcpy(HistogramBufferRA.GetData(), HistogramBufferCPU.GetData(), sizeof(uint32) * HISTOGRAM_BUFFER_SIZE);
 
 	HistogramBufferResource.ResourceArray = &HistogramBufferRA;
-	HistogramBufferRef = RHICreateStructuredBuffer(sizeof(uint32), sizeof(float) * HISTOGRAM_BUFFER_SIZE, BUF_ShaderResource, HistogramBufferResource);
-	HistogramBufferSRV = RHICreateShaderResourceView(HistogramBufferRef);
+	HistogramBufferRef = RHICreateStructuredBuffer(sizeof(uint32), sizeof(uint32) * HISTOGRAM_BUFFER_SIZE, 
+		BUF_ShaderResource | BUF_UnorderedAccess, HistogramBufferResource);
+	HistogramBufferUAV = RHICreateUnorderedAccessView(HistogramBufferRef, false, false);
 
 	const FTexture2DRHIRef &TextureRef = InputTexture->GetRenderTargetResource()->GetRenderTargetTexture();
 	InputTextureRef = TextureRef;
 
-
-
-	ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(InitHistogramBufferCommand,
-		UHistogramComponent*, ShaderComponent, this, {
-		  ShaderComponent->InitHistogram_RenderThread();
+	ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(InitHistogramBufferCommand,
+		UHistogramComponent*, ShaderComponent, this,
+		TArray<uint32>*, Readback, &HistogramBufferCPU, {
+		  ShaderComponent->InitHistogram_RenderThread(Readback);
 		});
 
 	RenderCommandFence.BeginFence();
 	RenderCommandFence.Wait();
+
+	UE_LOG(LogTemp, Warning, TEXT("===== Histogram Buffer output ====="));
+	PrintBuffer(HistogramBufferCPU);
+
 }
 
-void UHistogramComponent::InitHistogram_RenderThread()
+void UHistogramComponent::InitHistogram_RenderThread(TArray<uint32>* readback)
 {
 	check(IsInRenderingThread());
 
@@ -67,10 +82,22 @@ void UHistogramComponent::InitHistogram_RenderThread()
 	FRHICommandListImmediate& rhi_command_list = GRHICommandList.GetImmediateCommandList();
 
 	// Get the actual shader instance off the ShaderMap
-	TShaderMapRef<FHistogramShader> shader(ShaderMap);
+	TShaderMapRef<FHistogramShaderMain> shader(ShaderMap);
 
 	rhi_command_list.SetComputeShader(shader->GetComputeShader());
-	shader->SetHistogramBuffer(rhi_command_list, HistogramBufferSRV);
+	shader->SetLevel(rhi_command_list, HISTOGRAM_BUFFER_SIZE);
 	shader->SetInputTexture(rhi_command_list, InputTextureRef);
+	shader->SetHistogramBuffer(rhi_command_list, HistogramBufferUAV);
+	
+	DispatchComputeShader(rhi_command_list, *shader, 8, 8, 1);
+
+	shader->ClearOutput(rhi_command_list);
+	shader->ClearParameters(rhi_command_list);
+
+	const auto* shader_data = (const uint32*)rhi_command_list.LockStructuredBuffer(HistogramBufferRef, 0, sizeof(uint32) * HISTOGRAM_BUFFER_SIZE, EResourceLockMode::RLM_ReadOnly);
+	FMemory::Memcpy(readback->GetData(), shader_data, sizeof(uint32) * HISTOGRAM_BUFFER_SIZE);
+
+	rhi_command_list.UnlockStructuredBuffer(HistogramBufferRef);
+
 }
 

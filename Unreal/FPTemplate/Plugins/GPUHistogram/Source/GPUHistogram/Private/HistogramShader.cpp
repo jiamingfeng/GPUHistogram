@@ -10,20 +10,23 @@ FHistogramShader::FHistogramShader()
 FHistogramShader::FHistogramShader(const ShaderMetaType::CompiledShaderInitializerType& initializer)
 	: FGlobalShader(initializer)
 {
-	Level.Bind(initializer.ParameterMap, TEXT("level"), SPF_Mandatory);
+	Level.Bind(initializer.ParameterMap, TEXT("level"), SPF_Optional);
 	HistogramBuffer.Bind(initializer.ParameterMap, TEXT("HistogramBuffer"), SPF_Mandatory);
 	InputTexture.Bind(initializer.ParameterMap, TEXT("InputTexture"), SPF_Mandatory);
-	HistogramTexture.Bind(initializer.ParameterMap, TEXT("HistogramTexture"), SPF_Mandatory);
+	HistogramTexture.Bind(initializer.ParameterMap, TEXT("HistogramTexture"), SPF_Optional);
 }
 
 bool FHistogramShader::Serialize(FArchive& Ar) {
 	bool bShaderHasOutdatedParameters = FGlobalShader::Serialize(Ar);
-	Ar << HistogramBuffer << InputTexture << HistogramTexture;
+	Ar << Level << HistogramBuffer << InputTexture << HistogramTexture;
 	return bShaderHasOutdatedParameters;
 }
 
 void FHistogramShader::SetLevel(FRHICommandList& rhi_command_list, const float level) {
-	SetShaderValue(rhi_command_list, GetComputeShader(), Level, level);
+	if (Level.IsBound())
+	{
+		SetShaderValue(rhi_command_list, GetComputeShader(), Level, level);
+	}	
 }
 
 void FHistogramShader::SetInputTexture(FRHICommandList& rhi_command_list, FTextureRHIParamRef textureRef)
@@ -35,10 +38,10 @@ void FHistogramShader::SetInputTexture(FRHICommandList& rhi_command_list, FTextu
 	}
 }
 
-void FHistogramShader::SetHistogramBuffer(FRHICommandList& rhi_command_list, FShaderResourceViewRHIRef bufferRef)
+void FHistogramShader::SetHistogramBuffer(FRHICommandList& rhi_command_list, FUnorderedAccessViewRHIParamRef bufferRef)
 {
 	if (HistogramBuffer.IsBound()) {
-		rhi_command_list.SetShaderResourceViewParameter(GetComputeShader(), HistogramBuffer.GetBaseIndex(), bufferRef);
+		rhi_command_list.SetUAVParameter(GetComputeShader(), HistogramBuffer.GetBaseIndex(), bufferRef);
 	}
 }
 
@@ -52,9 +55,6 @@ void FHistogramShader::SetHistogramTexture(FRHICommandList& rhi_command_list,
 
 void FHistogramShader::ClearParameters(FRHICommandList& rhi_command_list)
 {
-	if (HistogramBuffer.IsBound()) {
-		rhi_command_list.SetShaderResourceViewParameter(GetComputeShader(), HistogramBuffer.GetBaseIndex(), FShaderResourceViewRHIParamRef());
-	}
 	if (InputTexture.IsBound()) {
 		rhi_command_list.SetShaderResourceViewParameter(GetComputeShader(), InputTexture.GetBaseIndex(), FShaderResourceViewRHIParamRef());
 	}
@@ -62,6 +62,10 @@ void FHistogramShader::ClearParameters(FRHICommandList& rhi_command_list)
 
 void FHistogramShader::ClearOutput(FRHICommandList& rhi_command_list)
 {
+	if (HistogramBuffer.IsBound()) {
+		rhi_command_list.SetUAVParameter(GetComputeShader(), HistogramBuffer.GetBaseIndex(), FUnorderedAccessViewRHIParamRef());
+	}
+
 	if (HistogramTexture.IsBound())
 	{
 		rhi_command_list.SetUAVParameter(GetComputeShader(), HistogramTexture.GetBaseIndex(), FUnorderedAccessViewRHIParamRef());
