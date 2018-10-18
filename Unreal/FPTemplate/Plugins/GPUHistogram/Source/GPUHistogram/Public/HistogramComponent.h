@@ -31,6 +31,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Histogram")
 	void InitHistogram(UTextureRenderTarget2D* InputTexture);
 
+	//UFUNCTION(BlueprintCallable, Category = "Histogram")
+	//void GetHistogram(UTextureRenderTarget2D* &InputTexture);
+
 	void InitHistogram_RenderThread(TArray<uint32>* readback);
 
 	TResourceArray<uint32> HistogramBufferRA;

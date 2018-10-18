@@ -11,8 +11,8 @@ FHistogramShader::FHistogramShader(const ShaderMetaType::CompiledShaderInitializ
 	: FGlobalShader(initializer)
 {
 	Level.Bind(initializer.ParameterMap, TEXT("level"), SPF_Optional);
-	HistogramBuffer.Bind(initializer.ParameterMap, TEXT("HistogramBuffer"), SPF_Mandatory);
-	InputTexture.Bind(initializer.ParameterMap, TEXT("InputTexture"), SPF_Mandatory);
+	HistogramBuffer.Bind(initializer.ParameterMap, TEXT("HistogramBuffer"), SPF_Optional);
+	InputTexture.Bind(initializer.ParameterMap, TEXT("InputTexture"), SPF_Optional);
 	HistogramTexture.Bind(initializer.ParameterMap, TEXT("HistogramTexture"), SPF_Optional);
 }
 
